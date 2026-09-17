@@ -504,6 +504,81 @@
         .locating-dots span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes dotBlink { 0%,80%,100% { opacity: 0.2; } 40% { opacity: 1; } }
 
+        /* ───── FAR-FROM-SCHOOL SCREEN ───── */
+        .far-screen {
+            padding: 34px 22px 28px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            text-align: center;
+        }
+        .far-icon-wrap {
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            background: linear-gradient(160deg, var(--light-red), #ffd9d9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 0 6px rgba(183,28,28,0.08);
+            animation: shakeIcon 2.4s ease-in-out infinite;
+            margin-bottom: 4px;
+        }
+        @keyframes shakeIcon {
+            0%, 85%, 100% { transform: rotate(0deg); }
+            88% { transform: rotate(-8deg); }
+            91% { transform: rotate(8deg); }
+            94% { transform: rotate(-6deg); }
+            97% { transform: rotate(4deg); }
+        }
+        .far-icon { font-size: 42px; }
+        .far-title {
+            font-size: 21px;
+            font-weight: 900;
+            color: var(--red-dark);
+            letter-spacing: 0.5px;
+        }
+        .far-message {
+            font-size: 17px;
+            font-weight: 800;
+            color: #b71c1c;
+            line-height: 1.6;
+            background: var(--light-red);
+            border: 1.5px solid rgba(183,28,28,0.2);
+            border-radius: 14px;
+            padding: 14px 16px;
+        }
+        .far-distance {
+            font-size: 12px;
+            font-weight: 700;
+            color: #888;
+            letter-spacing: 0.5px;
+        }
+        .far-speaker {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--forest-green);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .retry-btn {
+            margin-top: 6px;
+            background: linear-gradient(135deg, var(--dark-navy) 0%, #1a2f42 100%);
+            color: white;
+            padding: 11px 22px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 900;
+            font-family: 'Cairo', sans-serif;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 16px rgba(13,27,42,0.35);
+            transition: all 0.25s ease;
+        }
+        .retry-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(13,27,42,0.45); }
+
         /* ───── START GATE (single tap that both unlocks sound and opens the app) ───── */
         .start-gate {
             position: fixed;
@@ -598,6 +673,16 @@
         </div>
         <div class="locating-text" id="locatingText">Raadinaya Goobtaada<span class="locating-dots"><span>.</span><span>.</span><span>.</span></span></div>
         <div class="locating-sub">Fadlan sug, waxaan hubinaynaa in aad iskuulka joogto</div>
+    </div>
+
+    <!-- Far-from-school screen -->
+    <div class="far-screen" id="farScreen">
+        <div class="far-icon-wrap"><span class="far-icon">🚫</span></div>
+        <div class="far-title">Ma Joogtid Iskuulka!</div>
+        <div class="far-message" id="farMessage">Fadlan marka hore iskuulka tag ama dib u soo gal appka.</div>
+        <div class="far-distance" id="farDistance"></div>
+        <div class="far-speaker">🔊 Codka wuu kuu sheegayaa fariinta</div>
+        <button class="retry-btn" id="retryBtn" onclick="location.reload()">🔄 Isku Day Mar Kale</button>
     </div>
 
     <!-- Body -->
@@ -773,16 +858,17 @@
         } catch (e) { /* silently ignore unsupported browsers */ }
     }
 
-    /* Switches from the radar "locating" screen to the actual form.
-       Called once, the first time GPS gives us any result (success or error). */
-    let locatingScreenShown = true;
-    function revealForm() {
-        if (!locatingScreenShown) return;
-        locatingScreenShown = false;
+    /* Switches between the radar "locating" screen, the "far from school"
+       screen, and the actual form — same 3-screen system as the driver app. */
+    let currentScreen = 'locating';
+    function showScreen(name) {
         const locatingScreen = document.getElementById('locatingScreen');
+        const farScreen      = document.getElementById('farScreen');
         const cardBody       = document.getElementById('cardBody');
-        if (locatingScreen) locatingScreen.style.display = 'none';
-        if (cardBody) cardBody.style.display = 'block';
+
+        locatingScreen.style.display = (name === 'locating') ? 'flex' : 'none';
+        farScreen.style.display      = (name === 'far')      ? 'flex' : 'none';
+        cardBody.style.display       = (name === 'ready')    ? 'block' : 'none';
     }
 
     /* ════════════════════════════════════════
@@ -838,10 +924,8 @@
         return h * 60 + m;
     }
 
-    let lastGpsVoiceState = null; // 'blocked' | 'far' | 'ready' — used so we speak only on change, not every GPS tick
     function startGPSWatch() {
         navigator.geolocation.watchPosition((pos) => {
-            revealForm();
             const now = new Date();
             const currentTime = now.getHours() * 60 + now.getMinutes();
             const shift = document.getElementById('shiftSelect').value.toLowerCase();
@@ -857,59 +941,61 @@
             const dot       = document.getElementById('statusDot');
             const submitBtn = document.getElementById('submitBtn');
 
-            let canSubmit = true;
-            let timeStatusMsg = "";
-
-            if (String(SETTINGS.time_limit_on).toLowerCase() === "true" && shift !== "") {
-                let start, end;
-                if (shift === "subax imaansho")      { start = parseTime(SETTINGS.morn_start);     end = parseTime(SETTINGS.morn_end);     }
-                else if (shift === "subax bixitaan") { start = parseTime(SETTINGS.morn_out_start); end = parseTime(SETTINGS.morn_out_end); }
-                else if (shift === "galab imaansho") { start = parseTime(SETTINGS.aft_start);      end = parseTime(SETTINGS.aft_end);      }
-                else if (shift === "galab bixitaan") { start = parseTime(SETTINGS.aft_out_start);  end = parseTime(SETTINGS.aft_out_end);  }
-
-                if (currentTime < start)      { timeStatusMsg = "❌ Lama gaarin waqtigii " + shift + ".";    canSubmit = false; }
-                else if (currentTime > end)   { timeStatusMsg = "❌ Waa la soo dhaafay waqtigii " + shift + "."; canSubmit = false; }
-            }
-
-            if (!canSubmit) {
-                statusEl.innerText = timeStatusMsg;
-                statusEl.style.color = "#bf360c";
-                dot.className = 'status-dot red';
-                submitBtn.disabled = true;
-                submitBtn.innerText = "⛔ WAA XIRAN YAHAY";
-                if (lastGpsVoiceState !== 'blocked') { lastGpsVoiceState = 'blocked'; }
-            } else if (dist <= SETTINGS.radius) {
-                statusEl.innerText = "✅ Hadda iskuulka waad joogtaa .";
-                statusEl.style.color = "#1a3a08";
-                dot.className = 'status-dot green';
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = "✅ XAADIRI";
-                if (lastGpsVoiceState !== 'ready') {
-                    lastGpsVoiceState = 'ready';
+            if (dist <= SETTINGS.radius) {
+                /* ── Waad joogtaa iskuulka ── */
+                if (currentScreen !== 'ready') {
+                    currentScreen = 'ready';
+                    showScreen('ready');
                     playVoice('ready', "Waad ku mahadsan tahay, hadda iskuulka waad joogtaa. Fadlan buuxi foomka si aad u xaadiratid.");
                 }
+
+                let canSubmit = true;
+                let timeStatusMsg = "";
+
+                if (String(SETTINGS.time_limit_on).toLowerCase() === "true" && shift !== "") {
+                    let start, end;
+                    if (shift === "subax imaansho")      { start = parseTime(SETTINGS.morn_start);     end = parseTime(SETTINGS.morn_end);     }
+                    else if (shift === "subax bixitaan") { start = parseTime(SETTINGS.morn_out_start); end = parseTime(SETTINGS.morn_out_end); }
+                    else if (shift === "galab imaansho") { start = parseTime(SETTINGS.aft_start);      end = parseTime(SETTINGS.aft_end);      }
+                    else if (shift === "galab bixitaan") { start = parseTime(SETTINGS.aft_out_start);  end = parseTime(SETTINGS.aft_out_end);  }
+
+                    if (currentTime < start)      { timeStatusMsg = "❌ Lama gaarin waqtigii " + shift + ".";    canSubmit = false; }
+                    else if (currentTime > end)   { timeStatusMsg = "❌ Waa la soo dhaafay waqtigii " + shift + "."; canSubmit = false; }
+                }
+
+                if (!canSubmit) {
+                    statusEl.innerText = timeStatusMsg;
+                    statusEl.style.color = "#bf360c";
+                    dot.className = 'status-dot red';
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = "⛔ WAA XIRAN YAHAY";
+                } else {
+                    statusEl.innerText = "✅ Hadda iskuulka waad joogtaa .";
+                    statusEl.style.color = "#1a3a08";
+                    dot.className = 'status-dot green';
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = "✅ XAADIRI";
+                }
             } else {
-                const farMsg = SETTINGS.msg_far || "Ma joogtid iskuulka fadlan marka hore iskuulka tag";
-                statusEl.innerText = farMsg + " (" + (dist*1000).toFixed(0) + "m).";
-                statusEl.style.color = "#b71c1c";
-                dot.className = 'status-dot red';
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = "📍 HUBINTA GOOBTA...";
-                if (lastGpsVoiceState !== 'far') {
-                    lastGpsVoiceState = 'far';
+                /* ── Ma joogtid iskuulka ── */
+                const farMsg = SETTINGS.msg_far || "Ma joogtid iskuulka, fadlan marka hore iskuulka tag ama dib u soo gal appka.";
+                document.getElementById('farMessage').innerText = farMsg;
+                document.getElementById('farDistance').innerText = "Fogaanta aad ka joogto iskuulka: " + (dist*1000).toFixed(0) + " mitir";
+
+                if (currentScreen !== 'far') {
+                    currentScreen = 'far';
+                    showScreen('far');
                     playVoice('far', farMsg);
                 }
             }
         }, (err) => {
             /* Geolocation error (e.g. permission denied) */
-            revealForm();
-            const statusEl = document.getElementById('status');
-            if (statusEl) {
-                statusEl.innerText = "⚠️ Fadlan oggolow Location-ka si aad appka u isticmaasho.";
-                statusEl.style.color = "#b71c1c";
-            }
-            if (lastGpsVoiceState !== 'gps_denied') {
-                lastGpsVoiceState = 'gps_denied';
+            const locatingText = document.getElementById('locatingText');
+            if (currentScreen !== 'locating' || locatingText.dataset.errorShown !== 'true') {
+                currentScreen = 'locating';
+                showScreen('locating');
+                locatingText.innerText = "⚠️ Fadlan oggolow Location-ka";
+                locatingText.dataset.errorShown = 'true';
                 playVoice('gps_denied', "Fadlan oggolow location-ka si aad appka u isticmaasho.");
             }
         }, { enableHighAccuracy: true });
