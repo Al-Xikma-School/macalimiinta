@@ -419,9 +419,156 @@
         }
         .toast.show  { transform: translateX(-50%) translateY(0); }
         .toast.error { border-left-color: var(--red-dark); }
+
+        /* ───── LOCATING (RADAR) SCREEN ───── */
+        .locating-screen {
+            padding: 34px 20px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+        .radar {
+            position: relative;
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(46,125,50,0.10) 0%, rgba(13,27,42,0.03) 75%);
+            border: 2px solid rgba(46,125,50,0.35);
+            overflow: hidden;
+            box-shadow: 0 0 0 6px rgba(46,125,50,0.06), inset 0 0 20px rgba(46,125,50,0.15);
+        }
+        .radar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle, transparent 0%, transparent 23%, rgba(46,125,50,0.25) 24%, transparent 25%),
+                radial-gradient(circle, transparent 0%, transparent 48%, rgba(46,125,50,0.25) 49%, transparent 50%),
+                radial-gradient(circle, transparent 0%, transparent 73%, rgba(46,125,50,0.25) 74%, transparent 75%),
+                linear-gradient(rgba(46,125,50,0.18) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(46,125,50,0.18) 1px, transparent 1px);
+            background-position: center, center, center, center, center;
+        }
+        .radar-sweep {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, rgba(46,125,50,0.75), rgba(46,125,50,0.15) 25%, transparent 45%);
+            animation: radarSpin 2.2s linear infinite;
+        }
+        @keyframes radarSpin { to { transform: rotate(360deg); } }
+        .radar-pin {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 22px;
+            z-index: 2;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+        }
+        .radar-pulse {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 14px; height: 14px;
+            background: var(--gold);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulseRing 1.6s ease-out infinite;
+            z-index: 1;
+        }
+        @keyframes pulseRing {
+            0%   { box-shadow: 0 0 0 0 rgba(249,168,37,0.6); }
+            70%  { box-shadow: 0 0 0 34px rgba(249,168,37,0); }
+            100% { box-shadow: 0 0 0 0 rgba(249,168,37,0); }
+        }
+        .locating-text {
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--dark-navy);
+            letter-spacing: 0.5px;
+        }
+        .locating-sub {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #789;
+            text-align: center;
+            line-height: 1.5;
+        }
+        .locating-dots span {
+            display: inline-block;
+            animation: dotBlink 1.4s infinite;
+            font-weight: 900;
+            color: var(--bright-green);
+        }
+        .locating-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .locating-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dotBlink { 0%,80%,100% { opacity: 0.2; } 40% { opacity: 1; } }
+
+        /* ───── START GATE (single tap that both unlocks sound and opens the app) ───── */
+        .start-gate {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 22px;
+            background: linear-gradient(135deg, var(--dark-navy) 0%, #1a2f42 50%, var(--forest-green) 100%);
+            padding: 24px;
+            text-align: center;
+        }
+        .start-gate.hidden { display: none; }
+        .start-gate img.logo {
+            width: 78px;
+            height: 78px;
+            border-radius: 50%;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+        .start-gate h2 {
+            color: #fff;
+            font-size: 19px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+        }
+        .start-gate .start-sub {
+            color: #b9c4cf;
+            font-size: 13px;
+            max-width: 260px;
+            line-height: 1.5;
+        }
+        .start-btn {
+            background: linear-gradient(135deg, var(--gold), #ffc94d);
+            color: var(--dark-navy);
+            border: none;
+            padding: 16px 46px;
+            border-radius: 40px;
+            font-family: 'Cairo', sans-serif;
+            font-size: 16px;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(249,168,37,0.45);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: soundBtnPulse 1.8s ease-in-out infinite;
+        }
+        @keyframes soundBtnPulse {
+            0%,100% { transform: scale(1); }
+            50%     { transform: scale(1.05); }
+        }
+        .start-btn:active { transform: scale(0.96); }
     </style>
 </head>
 <body>
+
+<!-- Start gate: single tap that unlocks sound AND opens the app -->
+<div class="start-gate" id="startGate">
+    <img src="10754.jpg" alt="Logo" class="logo">
+    <h2 id="startGateSchoolName">AL XIKMA SCHOOL</h2>
+    <div class="start-sub">Nidaamka Xaadirinta ee Macalimiinta</div>
+    <button class="start-btn" id="startGateBtn">🔊 Bilow</button>
+</div>
 
 <!-- Particles -->
 <div class="particles" id="particles"></div>
@@ -442,8 +589,19 @@
         <div class="header-subtitle">Nidaamka Xaadirinta</div>
     </div>
 
+    <!-- Locating / Radar screen (shown first, while we search for the location) -->
+    <div class="locating-screen" id="locatingScreen">
+        <div class="radar">
+            <div class="radar-sweep"></div>
+            <div class="radar-pulse"></div>
+            <div class="radar-pin">📍</div>
+        </div>
+        <div class="locating-text" id="locatingText">Raadinaya Goobtaada<span class="locating-dots"><span>.</span><span>.</span><span>.</span></span></div>
+        <div class="locating-sub">Fadlan sug, waxaan hubinaynaa in aad iskuulka joogto</div>
+    </div>
+
     <!-- Body -->
-    <div class="card-body">
+    <div class="card-body" id="cardBody" style="display:none;">
 
         <div class="time-badge">🕐 <span id="liveClock">--:--:--</span></div>
 
@@ -530,6 +688,104 @@
     }
 
     /* ════════════════════════════════════════
+       VOICE SYSTEM
+       Codad la duubay (mp3) oo saafi u dhawaaqa
+       af-Soomaali — haddii fayl uu maqan yahay,
+       si toos ah waxaa loo isticmaalaa codka
+       browser-ka (speechSynthesis) si appku aanu
+       u jabin.
+
+       XASILLOONI: Faylasha mp3-ga waa in la geliyaa
+       galka ku xigga index.html-ka (root-ka), iyadoo
+       magacyadan oo kali ah la isticmaalayo:
+         ready.mp3             - "Waad ku mahadsan tahay, hadda iskuulka ayaad joogtaa, fadlan buuxi foomka."
+         far.mp3                - "Ma joogtid iskuulka, fadlan marka hore iskuulka tag ama dib u soo gal appka."
+         gps_denied.mp3         - "Fadlan oggolow location-ka si aad appka u isticmaasho."
+         empty_fields.mp3       - "Fadlan buuxi dhammaan khaanaha."
+         wrong_password.mp3     - "Password-kaagu waa khaldan yahay."
+         already_attended.mp3   - "Horaad ayaad isugu xaadirisay maalintan, hal mar oo keliya ayaa maalintii laguu ogol yahay."
+         success.mp3            - "Waad ku guulaysatay xaadiritaanka."
+    ════════════════════════════════════════ */
+    const VOICE_FILES = {
+        ready:             'ready.mp3',
+        far:               'far.mp3',
+        gps_denied:        'gps_denied.mp3',
+        empty_fields:      'empty_fields.mp3',
+        wrong_password:    'wrong_password.mp3',
+        already_attended:  'already_attended.mp3',
+        success:           'success.mp3'
+    };
+
+    let audioUnlocked = false;
+    let pendingVoice   = null; // { key, fallbackText } — queued if audio isn't unlocked yet
+
+    function unlockAudio() {
+        if (audioUnlocked) return;
+        audioUnlocked = true;
+        try { const t = new Audio(); t.play().catch(() => {}); } catch (e) {}
+        if (pendingVoice) {
+            const pv = pendingVoice;
+            pendingVoice = null;
+            playVoice(pv.key, pv.fallbackText);
+        }
+    }
+
+    /* ── Start gate: hal taabasho oo keliya ah — waxay daartaa codka
+       (taasoo browser-ku u baahan yahay taabasho dhab ah) ka dibna
+       si tartiib ah ayey u qariyaan gate-ka, iyadoo appku (raadinta
+       goobta, iwm) horeba u socday gadaasha. ── */
+    const startGate = document.getElementById('startGate');
+    const startGateBtn = document.getElementById('startGateBtn');
+    if (startGateBtn) {
+        startGateBtn.addEventListener('click', () => {
+            unlockAudio();
+            if (startGate) startGate.classList.add('hidden');
+        });
+    }
+
+    /* Plays the recorded mp3 for `key`; if it's missing/fails to load, falls back
+       to browser text-to-speech reading `fallbackText`. */
+    function playVoice(key, fallbackText) {
+        if (!audioUnlocked) { pendingVoice = { key, fallbackText }; return; }
+        const src = key ? VOICE_FILES[key] : null;
+        if (src) {
+            const audio = new Audio(src);
+            let handled = false;
+            audio.addEventListener('error', () => { if (!handled) { handled = true; speak(fallbackText); } });
+            audio.play().catch(() => { if (!handled) { handled = true; speak(fallbackText); } });
+        } else {
+            speak(fallbackText);
+        }
+    }
+
+    /* ── Voice (Text-to-Speech) fallback — used only when a recorded mp3 isn't available ── */
+    function speak(text) {
+        try {
+            if (!('speechSynthesis' in window) || !text) return;
+            const clean = String(text).replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim();
+            if (!clean) return;
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(clean);
+            utter.lang = 'so-SO';
+            utter.rate = 0.95;
+            utter.pitch = 1;
+            window.speechSynthesis.speak(utter);
+        } catch (e) { /* silently ignore unsupported browsers */ }
+    }
+
+    /* Switches from the radar "locating" screen to the actual form.
+       Called once, the first time GPS gives us any result (success or error). */
+    let locatingScreenShown = true;
+    function revealForm() {
+        if (!locatingScreenShown) return;
+        locatingScreenShown = false;
+        const locatingScreen = document.getElementById('locatingScreen');
+        const cardBody       = document.getElementById('cardBody');
+        if (locatingScreen) locatingScreen.style.display = 'none';
+        if (cardBody) cardBody.style.display = 'block';
+    }
+
+    /* ════════════════════════════════════════
        ASALKA — Firebase + GPS + Submit Logic
        (waxba lama badelin)
     ════════════════════════════════════════ */
@@ -554,6 +810,8 @@
         if (data) {
             SETTINGS = data;
             document.getElementById('displaySchoolName').innerText = SETTINGS.school_name || "AL XIKMA SCHOOL";
+            const gateNameEl = document.getElementById('startGateSchoolName');
+            if (gateNameEl) gateNameEl.innerText = SETTINGS.school_name || "AL XIKMA SCHOOL";
             startGPSWatch();
         }
     });
@@ -580,8 +838,10 @@
         return h * 60 + m;
     }
 
+    let lastGpsVoiceState = null; // 'blocked' | 'far' | 'ready' — used so we speak only on change, not every GPS tick
     function startGPSWatch() {
         navigator.geolocation.watchPosition((pos) => {
+            revealForm();
             const now = new Date();
             const currentTime = now.getHours() * 60 + now.getMinutes();
             const shift = document.getElementById('shiftSelect').value.toLowerCase();
@@ -617,20 +877,42 @@
                 dot.className = 'status-dot red';
                 submitBtn.disabled = true;
                 submitBtn.innerText = "⛔ WAA XIRAN YAHAY";
+                if (lastGpsVoiceState !== 'blocked') { lastGpsVoiceState = 'blocked'; }
             } else if (dist <= SETTINGS.radius) {
                 statusEl.innerText = "✅ Hadda iskuulka waad joogtaa .";
                 statusEl.style.color = "#1a3a08";
                 dot.className = 'status-dot green';
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = "✅ XAADIRI";
+                if (lastGpsVoiceState !== 'ready') {
+                    lastGpsVoiceState = 'ready';
+                    playVoice('ready', "Waad ku mahadsan tahay, hadda iskuulka waad joogtaa. Fadlan buuxi foomka si aad u xaadiratid.");
+                }
             } else {
-                statusEl.innerText = (SETTINGS.msg_far || "Ma joogtid iskuulka fadlan marka hore iskuulka tag") + " (" + (dist*1000).toFixed(0) + "m).";
+                const farMsg = SETTINGS.msg_far || "Ma joogtid iskuulka fadlan marka hore iskuulka tag";
+                statusEl.innerText = farMsg + " (" + (dist*1000).toFixed(0) + "m).";
                 statusEl.style.color = "#b71c1c";
                 dot.className = 'status-dot red';
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = "📍 HUBINTA GOOBTA...";
+                if (lastGpsVoiceState !== 'far') {
+                    lastGpsVoiceState = 'far';
+                    playVoice('far', farMsg);
+                }
             }
-        }, null, { enableHighAccuracy: true });
+        }, (err) => {
+            /* Geolocation error (e.g. permission denied) */
+            revealForm();
+            const statusEl = document.getElementById('status');
+            if (statusEl) {
+                statusEl.innerText = "⚠️ Fadlan oggolow Location-ka si aad appka u isticmaasho.";
+                statusEl.style.color = "#b71c1c";
+            }
+            if (lastGpsVoiceState !== 'gps_denied') {
+                lastGpsVoiceState = 'gps_denied';
+                playVoice('gps_denied', "Fadlan oggolow location-ka si aad appka u isticmaasho.");
+            }
+        }, { enableHighAccuracy: true });
     }
 
     document.getElementById('submitBtn').addEventListener('click', () => {
@@ -638,8 +920,8 @@
         const shift = document.getElementById('shiftSelect').value;
         const pass  = document.getElementById('passInput').value;
 
-        if (!name || !shift || !pass) { showToast("❗ Fadlan buuxi dhamaan khaanadaha!", true); return; }
-        if (!TEACHER_DB[name] || String(TEACHER_DB[name].pass) !== String(pass)) { showToast("🔒 Password-ku waa khaldan yahay!", true); return; }
+        if (!name || !shift || !pass) { showToast("❗ Fadlan buuxi dhamaan khaanadaha!", true); playVoice('empty_fields', "Fadlan buuxi dhammaan khaanaha."); return; }
+        if (!TEACHER_DB[name] || String(TEACHER_DB[name].pass) !== String(pass)) { showToast("🔒 Password-ku waa khaldan yahay!", true); playVoice('wrong_password', "Password-kaagu waa khaldan yahay."); return; }
 
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.disabled = true;
@@ -657,6 +939,7 @@
 
             if (horay_u_jiray) {
                 showToast("⚠️ Horey ayaad isugu xaadirisay " + shift + " maanta. Ustaad hal mar ayaa laguu ogol yahay maalintii!", true);
+                playVoice('already_attended', "Horaad ayaad isugu xaadirisay maalintan, hal mar oo keliya ayaa maalintii laguu ogol yahay.");
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = "✅ XAADIRI";
             } else {
@@ -669,6 +952,7 @@
                     shift: shift,
                     time: firebase.database.ServerValue.TIMESTAMP
                 }).then(() => {
+                    playVoice('success', "Waad ku guulaysatay xaadiritaanka.");
                     document.getElementById('mainContainer').innerHTML = `
                         <div class="success-screen">
                             <span class="success-icon" id="status-icon">⏳</span>
