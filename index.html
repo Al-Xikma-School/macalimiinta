@@ -888,6 +888,26 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    /* ════════════════════════════════════════
+       DEVICE ID — aqoonsi gaar ah oo u gaar ah
+       taleefankan/browser-kan, si loo ogaado
+       haddii isla taleefan uu ugu xaadiriyo
+       dad kala duwan (calaamad khiyaano).
+    ════════════════════════════════════════ */
+    function getDeviceId() {
+        let id = localStorage.getItem('device_id');
+        if (!id) {
+            id = (crypto.randomUUID) ? crypto.randomUUID()
+                 : 'dev-' + Date.now() + '-' + Math.random().toString(36).slice(2, 12);
+            localStorage.setItem('device_id', id);
+        }
+        return id;
+    }
+    function sanitizeKey(str) {
+        return String(str).replace(/[.#$\[\]\/]/g, '_');
+    }
+    const DEVICE_ID = getDeviceId();
+
     let TEACHER_DB = {};
     let SETTINGS = {};
 
@@ -1036,8 +1056,18 @@
                     name: name,
                     email: TEACHER_DB[name].email || "",
                     shift: shift,
+                    device_id: DEVICE_ID,
+                    device_info: navigator.userAgent,
                     time: firebase.database.ServerValue.TIMESTAMP
                 }).then(() => {
+                    /* Diiwaan gelinta device — haddii isla device_id uu ugu xaadiriyo
+                       dad badan oo kala duwan, waxaad ka arki kartaa 'devices/DEVICE_ID/names'
+                       gudaha Firebase Console — calaamad khiyaano. */
+                    db.ref('devices/' + sanitizeKey(DEVICE_ID) + '/names/' + sanitizeKey(name)).set(true);
+                    db.ref('devices/' + sanitizeKey(DEVICE_ID) + '/last_used').set(firebase.database.ServerValue.TIMESTAMP);
+                    db.ref('devices/' + sanitizeKey(DEVICE_ID) + '/history').push({
+                        name: name, shift: shift, time: firebase.database.ServerValue.TIMESTAMP
+                    });
                     playVoice('success', "Waad ku guulaysatay xaadiritaanka.");
                     document.getElementById('mainContainer').innerHTML = `
                         <div class="success-screen">
